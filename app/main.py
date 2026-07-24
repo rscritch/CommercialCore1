@@ -41,16 +41,36 @@ def initialize():
                 connection.execute(text("ALTER TABLE projections ADD COLUMN scoring_version VARCHAR(20)"))
             if "score_details" not in projection_columns:
                 connection.execute(text("ALTER TABLE projections ADD COLUMN score_details TEXT"))
-    with SessionLocal() as db:
-        if not db.scalar(select(User).where(User.username == ADMIN_USERNAME)):
-            db.add(User(
-                username=ADMIN_USERNAME,
-                full_name=ADMIN_FULL_NAME,
-                password_hash=hash_password(ADMIN_PASSWORD),
-                role="administrator",
-                active=True,
-            ))
-            db.commit()
+  with SessionLocal() as db:
+    admin_user = db.scalar(
+        select(User).where(User.username == ADMIN_USERNAME)
+    )
+
+    # Find an existing administrator created by the seeded database.
+    if admin_user is None:
+        admin_user = db.scalar(
+            select(User)
+            .where(User.role == "administrator")
+            .order_by(User.id)
+        )
+
+    if admin_user is None:
+        admin_user = User(
+            username=ADMIN_USERNAME,
+            full_name=ADMIN_FULL_NAME,
+            password_hash=hash_password(ADMIN_PASSWORD),
+            role="administrator",
+            active=True,
+        )
+        db.add(admin_user)
+    else:
+        admin_user.username = ADMIN_USERNAME
+        admin_user.full_name = ADMIN_FULL_NAME
+        admin_user.password_hash = hash_password(ADMIN_PASSWORD)
+        admin_user.role = "administrator"
+        admin_user.active = True
+
+    db.commit()
 
 @app.on_event("startup")
 def startup():
