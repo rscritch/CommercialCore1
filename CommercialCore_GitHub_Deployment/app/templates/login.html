@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% block content %}
+<div class="auth-shell">
+  <section class="auth-brand-panel">
+    <div class="auth-brand"><div class="brand-mark large">CC</div><div><strong>CommercialCore</strong><span>Commercial intelligence for stronger client conversations.</span></div></div>
+    <div class="auth-message"><span class="eyebrow light">Agency workflow platform</span><h1>See the account.<br>Understand the risk.<br>Know the next move.</h1><p>Monitor reporting, renewal timing, exposure movement, and account health from one streamlined workspace.</p></div>
+    <div class="auth-footnote">Internal agency workflow — not a carrier system</div>
+  </section>
+  <section class="auth-form-panel">
+    <div class="login-card">
+      <span class="eyebrow">Secure access</span><h2>Welcome back</h2><p class="muted">Sign in to open the CommercialCore workspace.</p>
+      {% if error %}<div class="flash-error">{{ error }}</div>{% endif %}
+      <form method="post" action="/login">
+        <div class="field"><label>Username</label><input name="username" autocomplete="username" required></div>
+        <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+        <button class="full-width">Sign in</button>
+      </form>
+      <div class="login-hint"><b>Initial login</b><span>admin / admin123</span></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

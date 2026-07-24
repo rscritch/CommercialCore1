@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block content %}
+<div class="page-heading"><div><h1>Review Queue</h1><p class="muted">Filter, assign, and resolve items created by CommercialCore monitoring rules.</p></div></div>
+<div class="grid">
+<div class="card span-3"><div class="muted">Filtered items</div><div class="metric">{{ summary.total }}</div></div>
+<div class="card span-3"><div class="muted">High priority</div><div class="metric">{{ summary.high }}</div></div>
+<div class="card span-3"><div class="muted">Unassigned</div><div class="metric">{{ summary.unassigned }}</div></div>
+<div class="card span-3"><div class="muted">In progress</div><div class="metric">{{ summary.in_progress }}</div></div>
+<div class="card span-12">
+<form method="get" action="/reviews" class="filter-row">
+<div class="field"><label>Status</label><select name="status"><option value="active" {% if filters.status=='active' %}selected{% endif %}>All active</option><option value="open" {% if filters.status=='open' %}selected{% endif %}>Open</option><option value="in_progress" {% if filters.status=='in_progress' %}selected{% endif %}>In progress</option><option value="closed" {% if filters.status=='closed' %}selected{% endif %}>Closed</option><option value="all" {% if filters.status=='all' %}selected{% endif %}>All statuses</option></select></div>
+<div class="field"><label>Priority</label><select name="priority"><option value="">All priorities</option>{% for p in ['high','medium','low'] %}<option value="{{ p }}" {% if filters.priority==p %}selected{% endif %}>{{ p|title }}</option>{% endfor %}</select></div>
+<div class="field"><label>Owner</label><select name="owner"><option value="">All owners</option><option value="unassigned" {% if filters.owner=='unassigned' %}selected{% endif %}>Unassigned</option>{% for u in users %}<option value="{{ u.id }}" {% if filters.owner==u.id|string %}selected{% endif %}>{{ u.full_name }}</option>{% endfor %}</select></div>
+<div class="filter-actions"><button>Apply filters</button><a class="button secondary" href="/reviews">Reset</a></div>
+</form>
+</div>
+<div class="card span-12"><div class="table-scroll"><table><tr><th>Business</th><th>Review</th><th>Why it was created</th><th>Priority</th><th>Status</th><th>Owner</th><th>Created</th></tr>{% for r in reviews %}<tr><td><a href="/businesses/{{ r.business_id }}">{{ r.business.legal_name }}</a></td><td><a href="/reviews/{{ r.id }}"><strong>{{ r.title }}</strong></a><br><small class="muted">Rule: {{ r.rule_code }}</small></td><td class="evidence-cell">{{ r.evidence }}</td><td><span class="badge {{ r.priority }}">{{ r.priority }}</span></td><td>{{ r.status|replace('_',' ')|title }}</td><td>{{ r.assignee.full_name if r.assignee else "Unassigned" }}</td><td>{{ r.created_at.strftime('%Y-%m-%d') }}</td></tr>{% else %}<tr><td colspan="7">No review items match these filters.</td></tr>{% endfor %}</table></div></div>
+</div>{% endblock %}
