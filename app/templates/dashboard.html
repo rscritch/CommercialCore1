@@ -1,0 +1,176 @@
+{% extends "base.html" %}{% block page_context %}Executive dashboard{% endblock %}{% block content %}
+<div class="page-header modern-header">
+  <div><span class="eyebrow">Business Health Dashboard</span><h1>Executive Dashboard</h1><p>Prioritized account activity as of {{ executive.as_of.strftime('%B %d, %Y') }}.</p></div>
+  <a class="button primary-action" href="/businesses/new"><span>＋</span>Add business</a>
+</div>
+
+<div class="kpi-grid">
+  <article class="kpi-card featured"><div class="kpi-top"><span>CommercialCore Index</span><span class="kpi-icon">◎</span></div><strong>{{ portfolio.portfolio_index if portfolio.portfolio_index is not none else "—" }}</strong><p>Current portfolio health score</p></article>
+  <article class="kpi-card"><div class="kpi-top"><span>Action items</span><span class="kpi-icon">!</span></div><strong>{{ executive.action_count }}</strong><p>Items requiring attention</p></article>
+  <article class="kpi-card"><div class="kpi-top"><span>Renewing in 30 days</span><span class="kpi-icon">◷</span></div><strong>{{ executive.renewal_buckets['0_30'] }}</strong><p>Policies nearing renewal</p></article>
+  <article class="kpi-card"><div class="kpi-top"><span>Overdue reporting</span><span class="kpi-icon">↗</span></div><strong>{{ executive.reporting_summary.overdue }}</strong><p>Reports beyond due date</p></article>
+  <article class="kpi-card"><div class="kpi-top"><span>Portfolio health</span><span class="kpi-icon">✓</span></div><strong>{{ portfolio.healthy_count }}<small>/{{ business_count }}</small></strong><p>Accounts currently healthy</p></article>
+  <article class="kpi-card"><div class="kpi-top"><span>Material changes</span><span class="kpi-icon">∆</span></div><strong>{{ executive.material_changes }}</strong><p>Meaningful exposure movement</p></article>
+</div>
+
+<section class="executive-analytics" aria-labelledby="executive-analytics-title">
+  <div class="section-title"><div><span class="eyebrow">Phase 7.4.1</span><h2 id="executive-analytics-title">Executive analytics</h2><p>Agency-level performance based on stored policy, exposure, reporting, and score data.</p></div><span class="soft-badge">As of {{ executive.as_of.strftime('%b %d, %Y') }}</span></div>
+  <div class="analytics-kpis">
+    <article><span>Tracked annual premium</span><strong>${{ "{:,.0f}".format(analytics.active_premium) }}</strong><small>{{ analytics.premium_policy_count }} policies include premium</small></article>
+    <article><span>Average Core Index</span><strong>{{ analytics.average_core if analytics.average_core is not none else "—" }}</strong><small>{{ analytics.scored_exposure_count }} scored exposures</small></article>
+    <article><span>Overdue accounts</span><strong>{{ analytics.overdue_account_count }}</strong><small>{{ analytics.reporting.overdue }} overdue reporting items</small></article>
+    <article><span>Renewal premium, 6 months</span><strong>${{ "{:,.0f}".format(analytics.renewal_pipeline|sum(attribute='premium')) }}</strong><small>{{ analytics.renewal_pipeline|sum(attribute='count') }} policy renewals</small></article>
+  </div>
+  <div class="analytics-grid">
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Premium effective-date trend</h3><p>Annual premium attached to policies effective during each trailing month.</p></div></div><div id="executive-premium-chart" class="chart"></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Renewal pipeline</h3><p>Policy count and tracked annual premium by expiration month.</p></div></div><div id="executive-renewal-chart" class="chart"></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Portfolio health</h3><p>Current business classification from the CommercialCore scoring rules.</p></div></div><div class="health-distribution">{% for item in analytics.health_distribution %}<div class="health-distribution-row"><div><span class="health-dot {{ item.key }}"></span><b>{{ item.label }}</b><small>{{ item.count }} accounts</small></div><div class="meter"><span class="{{ item.key }}" style="width:{{ item.percent }}%"></span></div><strong>{{ item.percent }}%</strong></div>{% endfor %}</div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Reporting completeness</h3><p>Current status for every active monitored exposure.</p></div></div><div class="reporting-breakdown"><div class="danger"><strong>{{ analytics.reporting.overdue }}</strong><span>Overdue</span></div><div class="warn"><strong>{{ analytics.reporting.due_soon }}</strong><span>Due soon</span></div><div class="good"><strong>{{ analytics.reporting.current }}</strong><span>Current</span></div><div class="neutral"><strong>{{ analytics.reporting.not_started }}</strong><span>Not started</span></div></div></article>
+  </div>
+</section>
+<script id="executive-analytics-data" type="application/json">{{ {"premium_trend": analytics.premium_trend, "renewal_pipeline": analytics.renewal_pipeline}|tojson }}</script>
+
+
+<section class="staff-analytics" aria-labelledby="staff-analytics-title">
+  <div class="section-title"><div><span class="eyebrow">Phase 7.4.2</span><h2 id="staff-analytics-title">Staff analytics</h2><p>Workload, task completion, review ownership, and documented client activity by active staff member.</p></div><span class="soft-badge">Trailing 30 days</span></div>
+  <div class="analytics-kpis staff-kpis">
+    <article><span>Active staff</span><strong>{{ staff.active_staff }}</strong><small>Enabled user accounts</small></article>
+    <article><span>Open tasks</span><strong>{{ staff.open_tasks }}</strong><small>{{ staff.overdue_tasks }} overdue</small></article>
+    <article><span>Completed tasks</span><strong>{{ staff.completed_30 }}</strong><small>During the trailing 30 days</small></article>
+    <article><span>Client activities</span><strong>{{ staff.activities_30 }}</strong><small>Calls, emails, meetings, and notes</small></article>
+    <article><span>Open reviews</span><strong>{{ staff.open_reviews }}</strong><small>Currently assigned or unassigned</small></article>
+    <article><span>Avg. completion time</span><strong>{% if staff.average_completion_days is not none %}{{ staff.average_completion_days }}d{% else %}—{% endif %}</strong><small>Created-to-completed tasks</small></article>
+  </div>
+  <div class="analytics-grid">
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Task workload by staff</h3><p>Open and overdue assignments as of today.</p></div></div><div id="staff-workload-chart" class="chart"></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Activity and completion</h3><p>Documented client activities and completed tasks during the trailing 30 days.</p></div></div><div id="staff-activity-chart" class="chart"></div></article>
+  </div>
+  <div class="panel staff-table-panel"><div class="table-scroll"><table class="modern-table"><tr><th>Staff member</th><th>Role</th><th>Open</th><th>Overdue</th><th>Due 7d</th><th>Completed 30d</th><th>Avg. days</th><th>Activities 30d</th><th>Reviews</th><th>Accounts</th></tr>{% for row in staff.rows %}<tr><td><strong>{{ row.user.full_name }}</strong><small>@{{ row.user.username }}</small></td><td>{{ row.user.role|replace('_',' ')|title }}</td><td>{{ row.open_tasks }}</td><td>{% if row.overdue_tasks %}<span class="badge high">{{ row.overdue_tasks }}</span>{% else %}0{% endif %}</td><td>{{ row.due_week }}</td><td>{{ row.completed_30 }}</td><td>{{ row.average_completion_days if row.average_completion_days is not none else '—' }}</td><td>{{ row.activities_30 }}</td><td>{{ row.open_reviews }}</td><td>{{ row.produced_accounts }}</td></tr>{% else %}<tr><td colspan="10">No active staff accounts.</td></tr>{% endfor %}</table></div></div>
+</section>
+<script id="staff-analytics-data" type="application/json">{{ {"workload": staff.workload_chart, "activity": staff.activity_chart}|tojson }}</script>
+
+
+<section class="portfolio-analytics" aria-labelledby="portfolio-analytics-title">
+  <div class="section-title"><div><span class="eyebrow">Phase 7.4.3</span><h2 id="portfolio-analytics-title">Portfolio analytics</h2><p>Premium composition, concentration, account size, geographic distribution, and stored projection movement.</p></div><span class="soft-badge">Auditable stored data</span></div>
+  <div class="analytics-kpis portfolio-kpis">
+    <article><span>Tracked premium</span><strong>${{ "{:,.0f}".format(portfolio_analytics.total_premium) }}</strong><small>{{ portfolio_analytics.tracked_business_count }} businesses with premium</small></article>
+    <article><span>Carriers</span><strong>{{ portfolio_analytics.carrier_count }}</strong><small>Named carrier relationships</small></article>
+    <article><span>Industries</span><strong>{{ portfolio_analytics.industry_count }}</strong><small>Represented business segments</small></article>
+    <article><span>Lines of business</span><strong>{{ portfolio_analytics.line_count }}</strong><small>Active policy lines</small></article>
+    <article><span>Top-five concentration</span><strong>{{ portfolio_analytics.top_five_concentration }}%</strong><small>Share of tracked premium</small></article>
+  </div>
+  <div class="analytics-grid portfolio-chart-grid">
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Premium by carrier</h3><p>Tracked annual premium by carrier reference.</p></div></div><div id="portfolio-carrier-chart" class="chart"></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Premium by industry</h3><p>Tracked annual premium grouped by business industry.</p></div></div><div id="portfolio-industry-chart" class="chart"></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Premium by line</h3><p>Tracked annual premium grouped by policy line.</p></div></div><div id="portfolio-line-chart" class="chart"></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Geographic distribution</h3><p>Primary active account location and associated tracked premium.</p></div></div><div class="table-scroll"><table class="modern-table"><tr><th>State</th><th>Accounts</th><th>Premium</th><th>Share</th></tr>{% for row in portfolio_analytics.geographic %}<tr><td><strong>{{ row.state }}</strong></td><td>{{ row.accounts }}</td><td>${{ "{:,.0f}".format(row.premium) }}</td><td>{{ row.percent }}%</td></tr>{% else %}<tr><td colspan="4">Add business locations to populate geography.</td></tr>{% endfor %}</table></div></article>
+  </div>
+  <div class="analytics-grid portfolio-table-grid">
+    <article class="panel"><div class="panel-heading"><div><h3>Largest accounts</h3><p>Accounts ranked by active tracked annual premium.</p></div></div><div class="table-scroll"><table class="modern-table"><tr><th>Business</th><th>Policies</th><th>Premium</th><th>Portfolio share</th></tr>{% for row in portfolio_analytics.largest_accounts %}<tr><td><a href="/businesses/{{ row.business.id }}"><strong>{{ row.business.legal_name }}</strong></a></td><td>{{ row.policy_count }}</td><td>${{ "{:,.0f}".format(row.premium) }}</td><td>{{ row.percent }}%</td></tr>{% else %}<tr><td colspan="4">No active businesses.</td></tr>{% endfor %}</table></div></article>
+    <article class="panel"><div class="panel-heading"><div><h3>Projection movement</h3><p>Average movement between the two latest stored projections.</p></div></div><div class="movement-columns"><div><h4>Fastest growing</h4>{% for row in portfolio_analytics.growing_accounts %}<a class="movement-row" href="/businesses/{{ row.business.id }}"><span>{{ row.business.legal_name }}<small>{{ row.exposure_count }} recalculated exposure{{ '' if row.exposure_count == 1 else 's' }}</small></span><strong class="variance up">+{{ row.movement }}%</strong></a>{% else %}<div class="empty-state compact"><b>Not enough history</b><small>Two stored projections are required.</small></div>{% endfor %}</div><div><h4>Declining</h4>{% for row in portfolio_analytics.declining_accounts %}<a class="movement-row" href="/businesses/{{ row.business.id }}"><span>{{ row.business.legal_name }}<small>{{ row.exposure_count }} recalculated exposure{{ '' if row.exposure_count == 1 else 's' }}</small></span><strong class="variance down">{{ row.movement }}%</strong></a>{% else %}<div class="empty-state compact"><b>No declines measured</b><small>Two stored projections are required.</small></div>{% endfor %}</div></div></article>
+  </div>
+</section>
+<script id="portfolio-analytics-data" type="application/json">{{ {"carrier": portfolio_analytics.carrier_chart, "industry": portfolio_analytics.industry_chart, "line": portfolio_analytics.line_chart}|tojson }}</script>
+
+
+<section class="historical-analytics" aria-labelledby="historical-analytics-title">
+  <div class="section-title"><div><span class="eyebrow">Phase 7.4.5</span><h2 id="historical-analytics-title">Historical analytics</h2><p>Trailing 12-month operating trends calculated from dated tasks, activities, recommendations, and projection records.</p></div><span class="soft-badge">Stored history only</span></div>
+  <div class="analytics-kpis historical-kpis">
+    <article><span>Current avg. index</span><strong>{{ history.current_average_core if history.current_average_core is not none else '—' }}</strong><small>{% if history.score_change is not none %}{{ '%+.1f'|format(history.score_change) }} points month over month{% else %}A prior scored month is required{% endif %}</small></article>
+    <article><span>Task completion rate</span><strong>{% if history.task_completion_rate is not none %}{{ history.task_completion_rate }}%{% else %}—{% endif %}</strong><small>{{ history.tasks_completed_total }} completed in view</small></article>
+    <article><span>Recommendation resolution</span><strong>{% if history.recommendation_resolution_rate is not none %}{{ history.recommendation_resolution_rate }}%{% else %}—{% endif %}</strong><small>{{ history.recommendations_resolved_total }} resolved in view</small></article>
+    <article><span>Client activities</span><strong>{{ history.activities_total }}</strong><small>Trailing {{ history.months }} months</small></article>
+  </div>
+  <div class="analytics-grid">
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Task and activity trend</h3><p>Created tasks, completed tasks, and documented client activities by month.</p></div></div><div class="table-scroll"><table class="modern-table"><tr><th>Month</th><th>Tasks created</th><th>Tasks completed</th><th>Activities</th></tr>{% for row in history.operations %}<tr><td><strong>{{ row.label }}</strong></td><td>{{ row.tasks_created }}</td><td>{{ row.tasks_completed }}</td><td>{{ row.activities }}</td></tr>{% endfor %}</table></div></article>
+    <article class="panel analytics-card"><div class="panel-heading"><div><h3>Recommendation effectiveness</h3><p>Recommendations detected and resolved during each month.</p></div></div><div class="table-scroll"><table class="modern-table"><tr><th>Month</th><th>Created</th><th>Resolved</th></tr>{% for row in history.recommendations %}<tr><td><strong>{{ row.label }}</strong></td><td>{{ row.created }}</td><td>{{ row.resolved }}</td></tr>{% endfor %}</table></div></article>
+  </div>
+  <article class="panel historical-score-panel"><div class="panel-heading"><div><h3>CommercialCore Index history</h3><p>Average of projection calculations created in each month; months without calculations remain blank.</p></div></div><div class="history-score-grid">{% for row in history.score_trend %}<div class="history-score-month"><span>{{ row.label }}</span><strong>{{ row.average_core if row.average_core is not none else '—' }}</strong><small>{{ row.calculations }} calculation{{ '' if row.calculations == 1 else 's' }}</small></div>{% endfor %}</div></article>
+</section>
+<script id="historical-analytics-data" type="application/json">{{ {"operations": history.operations, "recommendations": history.recommendations, "score_trend": history.score_trend}|tojson }}</script>
+
+<div class="dashboard-grid">
+  <section class="panel panel-wide">
+    <div class="panel-heading"><div><span class="eyebrow">Renewal management</span><h2>Renewal countdown</h2><p>Active policies expiring during the next 120 days.</p></div><span class="soft-badge">{{ executive.active_policy_count }} active policies</span></div>
+    <div class="segmented-metrics"><div><strong>{{ executive.renewal_buckets['0_30'] }}</strong><span>0–30 days</span></div><div><strong>{{ executive.renewal_buckets['31_60'] }}</strong><span>31–60 days</span></div><div><strong>{{ executive.renewal_buckets['61_90'] }}</strong><span>61–90 days</span></div><div><strong>{{ executive.renewal_buckets['over_90'] }}</strong><span>90+ days</span></div></div>
+    <div class="table-scroll"><table class="modern-table"><tr><th>Business</th><th>Policy</th><th>Expiration</th><th>Countdown</th></tr>{% for row in executive.renewals %}<tr><td><a href="/businesses/{{ row.business.id }}"><strong>{{ row.business.legal_name }}</strong></a></td><td>{{ row.policy.line }}</td><td>{{ row.policy.expiration_date.strftime('%b %d, %Y') }}</td><td><span class="countdown {{ row.urgency }}">{{ row.days }} days</span></td></tr>{% else %}<tr><td colspan="4"><div class="empty-state compact"><span>◷</span><b>No upcoming renewals</b><small>No policies expire during the next 120 days.</small></div></td></tr>{% endfor %}</table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Operational cadence</span><h2>Reporting status</h2><p>Based on cadence, grace period, and latest accepted report.</p></div></div>
+    <div class="status-grid"><div class="status-card danger"><strong>{{ executive.reporting_summary.overdue }}</strong><span>Overdue</span></div><div class="status-card warn"><strong>{{ executive.reporting_summary.due_soon }}</strong><span>Due soon</span></div><div class="status-card good"><strong>{{ executive.reporting_summary.current }}</strong><span>Current</span></div><div class="status-card neutral"><strong>{{ executive.reporting_summary.not_started }}</strong><span>Not started</span></div></div>
+    <div class="attention-list">{% for row in executive.reporting_due[:6] %}<div class="attention-item"><div><a href="/exposures/{{ row.exposure.id }}"><strong>{{ row.business.legal_name }}</strong></a><span>{{ row.exposure.exposure_type|replace('_',' ')|title }} · {{ row.exposure.cadence|title }}</span></div><span class="health-pill {{ 'review' if row.status == 'overdue' else 'watch' }}">{% if row.status == 'overdue' %}{{ row.days_until_due|abs }}d overdue{% elif row.status == 'due_soon' %}Due in {{ row.days_until_due }}d{% else %}Not started{% endif %}</span></div>{% else %}<div class="empty-state compact"><span>✓</span><b>No reporting alerts</b><small>Reporting activity is currently clear.</small></div>{% endfor %}</div>
+  </section>
+
+  <section class="panel panel-wide">
+    <div class="panel-heading"><div><span class="eyebrow">Exposure intelligence</span><h2>Exposure changes</h2><p>Largest projected differences from recorded estimates.</p></div></div>
+    <div class="table-scroll"><table class="modern-table"><tr><th>Business / exposure</th><th>Estimate</th><th>Projection</th><th>Variance</th><th>Since prior</th></tr>{% for row in executive.exposure_changes %}<tr><td><a href="/exposures/{{ row.exposure.id }}"><strong>{{ row.business.legal_name }}</strong></a><small>{{ row.exposure.exposure_type|replace('_',' ')|title }}</small></td><td>${{ "{:,.0f}".format(row.estimate) }}</td><td>${{ "{:,.0f}".format(row.projected) }}</td><td><span class="variance {{ row.direction }}">{{ "%+.1f"|format(row.variance) }}%</span>{% if row.material %}<span class="badge high">Material</span>{% endif %}</td><td>{% if row.movement is not none %}{{ "%+.1f"|format(row.movement) }}%{% else %}<span class="muted">First projection</span>{% endif %}</td></tr>{% else %}<tr><td colspan="5"><div class="empty-state compact"><span>∆</span><b>No scored changes yet</b><small>Add reporting data to begin exposure monitoring.</small></div></td></tr>{% endfor %}</table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Work management</span><h2>Review workload</h2><p>Open work by priority and assignment.</p></div><a class="text-link" href="/reviews">Open queue →</a></div>
+    <div class="workload-grid"><div><span>High priority</span><strong>{{ executive.review_counts.high }}</strong></div><div><span>Medium</span><strong>{{ executive.review_counts.medium }}</strong></div><div><span>Low</span><strong>{{ executive.review_counts.low }}</strong></div><div><span>Unassigned</span><strong>{{ executive.review_counts.unassigned }}</strong></div></div>
+    <div class="attention-list">{% for r in latest_reviews[:5] %}<div class="attention-item"><div><a href="/reviews/{{ r.id }}"><strong>{{ r.title }}</strong></a><span>{{ r.business.legal_name }}</span></div><span class="badge {{ r.priority }}">{{ r.priority }}</span></div>{% else %}<div class="empty-state compact"><span>✓</span><b>No active reviews</b><small>The review queue is clear.</small></div>{% endfor %}</div>
+  </section>
+
+
+  <section class="panel panel-full recommendation-overview">
+    <div class="panel-heading"><div><span class="eyebrow">Recommendation engine</span><h2>Actions CommercialCore recommends now</h2><p>Live recommendations with visible reasons, confidence, and direct workflow actions.</p></div><a class="text-link" href="/recommendations">Open recommendation center →</a></div>
+    <div class="dashboard-recommendations">{% for rec in recommendations %}<div class="dashboard-recommendation"><div><span class="badge {{rec.priority}}">{{rec.priority|title}}</span><a href="/businesses/{{rec.business.id}}"><strong>{{rec.business.legal_name}}</strong></a><b>{{rec.title}}</b><small>{{rec.reason}}</small></div><form method="post" action="/recommendations/{{rec.id}}/task"><button>Create task</button></form></div>{% else %}<div class="empty-state compact"><span>✓</span><b>No active recommendations</b><small>CommercialCore will surface the next action when a rule is triggered.</small></div>{% endfor %}</div>
+  </section>
+
+  <section class="panel panel-full intelligence-hero">
+    <div class="panel-heading"><div><span class="eyebrow">Portfolio intelligence</span><h2>Where the agency should focus</h2><p>CommercialCore ranks live account pressure using reviews, reporting, renewals, exposure movement, and score health.</p></div><span class="soft-badge">Transparent rule-based ranking</span></div>
+    <div class="intelligence-summary">
+      <div><strong>{{ intelligence.accounts_requiring_focus }}</strong><span>Accounts requiring focus</span></div>
+      <div><strong>{{ intelligence.worsening_count }}</strong><span>Accounts trending down</span></div>
+      <div><strong>{{ intelligence.overdue_reporting_count }}</strong><span>Overdue reporting items</span></div>
+      <div><strong>{{ intelligence.unassigned_reviews }}</strong><span>Unassigned reviews</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Book health</span><h2>Portfolio health distribution</h2><p>Current account classification across the commercial book.</p></div></div>
+    <div class="health-distribution">
+      {% for item in intelligence.health_distribution %}
+      <div class="health-distribution-row"><div><span class="health-dot {{ item.class }}"></span><b>{{ item.label }}</b><small>{{ item.count }} account{{ '' if item.count == 1 else 's' }}</small></div><div class="meter"><span class="{{ item.class }}" style="width: {{ item.percent }}%"></span></div><strong>{{ item.percent }}%</strong></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel panel-wide">
+    <div class="panel-heading"><div><span class="eyebrow">Daily focus list</span><h2>Top-priority accounts</h2><p>Highest combined operational pressure, with the reasons shown.</p></div></div>
+    <div class="priority-account-list">
+      {% for row in intelligence.priority_accounts %}
+      <a class="priority-account" href="/businesses/{{ row.business.id }}">
+        <div class="priority-rank">{{ loop.index }}</div>
+        <div class="priority-account-main"><div><strong>{{ row.business.legal_name }}</strong><span class="health-pill {{ row.health }}">{{ row.health|title }}</span></div><p>{{ row.reasons|join(' · ') }}</p></div>
+        <div class="priority-score"><strong>{{ row.priority_score }}</strong><span>focus score</span></div>
+      </a>
+      {% else %}<div class="empty-state compact"><span>✓</span><b>No accounts currently require focused attention</b><small>As data is added, CommercialCore will rank the accounts that need action first.</small></div>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel panel-wide">
+    <div class="panel-heading"><div><span class="eyebrow">Forward workload</span><h2>Six-month renewal pressure</h2><p>Policy expirations grouped by month.</p></div></div>
+    <div class="bar-list renewal-pressure">
+      {% for row in intelligence.renewal_months %}<div class="bar-list-row"><span>{{ row.label }}</span><div class="meter"><span style="width: {{ row.percent }}%"></span></div><strong>{{ row.count }}</strong></div>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Direction of travel</span><h2>Accounts trending down</h2><p>Businesses whose recent calculated scores declined.</p></div></div>
+    <div class="attention-list">{% for row in intelligence.worsening_accounts %}<div class="attention-item"><div><a href="/businesses/{{ row.business.id }}"><strong>{{ row.business.legal_name }}</strong></a><span>{{ row.reason }}</span></div><span class="variance down">{{ "%+.1f"|format(row.score_movement) }} pts</span></div>{% else %}<div class="empty-state compact"><span>↗</span><b>No declining score trends</b><small>Two projection calculations are needed before movement can be measured.</small></div>{% endfor %}</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Staff capacity</span><h2>Workload concentration</h2><p>Open tasks and reviews assigned to each active staff member.</p></div></div>
+    <div class="bar-list workload-list">{% for row in intelligence.workload %}<div class="workload-row"><div><b>{{ row.user.full_name }}</b><small>{{ row.tasks }} tasks · {{ row.reviews }} reviews{% if row.overdue %} · {{ row.overdue }} overdue{% endif %}</small></div><div class="meter"><span class="{% if row.overdue %}review{% endif %}" style="width: {{ row.percent }}%"></span></div><strong>{{ row.total }}</strong></div>{% else %}<div class="empty-state compact"><span>◎</span><b>No staff workload yet</b></div>{% endfor %}</div>
+  </section>
+
+  <section class="panel panel-full">
+    <div class="panel-heading"><div><span class="eyebrow">Portfolio action center</span><h2>Business action list</h2><p>Account health and recommended next action, sorted by urgency.</p></div><span class="soft-badge">{{ business_count }} businesses</span></div>
+    <div class="table-scroll"><table class="modern-table"><tr><th>Business</th><th>Health</th><th>Core index</th><th>Accuracy</th><th>Confidence</th><th>Open reviews</th><th>Next action</th></tr>{% for row in portfolio.rows %}<tr><td><a href="/businesses/{{ row.business.id }}"><strong>{{ row.business.legal_name }}</strong></a><small>{{ row.exposure_count }} monitored exposure{{ '' if row.exposure_count == 1 else 's' }}</small></td><td><span class="health-pill {{ row.health }}">{{ row.health|title }}</span></td><td><strong>{{ row.core_index if row.core_index is not none else "—" }}</strong></td><td>{{ row.accuracy if row.accuracy is not none else "—" }}</td><td>{{ row.confidence if row.confidence is not none else "—" }}</td><td>{{ row.open_reviews }}{% if row.high_reviews %}<span class="badge high">{{ row.high_reviews }} high</span>{% endif %}</td><td>{{ row.next_action }}</td></tr>{% else %}<tr><td colspan="7"><div class="empty-state"><span>▦</span><b>No businesses have been added</b><small>Create your first account to begin monitoring renewals, reporting, and exposure movement.</small><a class="button" href="/businesses/new">Add first business</a></div></td></tr>{% endfor %}</table></div>
+  </section>
+<section class="panel panel-full"><div class="panel-heading"><div><span class="eyebrow">Personal workspace</span><h2>Tasks and follow-ups</h2><p>Your current assignments and team workload.</p></div><a class="text-link" href="/tasks">Open tasks →</a></div><div class="task-summary"><div><strong>{{crm_overdue}}</strong><span>Overdue</span></div><div><strong>{{crm_due_week}}</strong><span>Due this week</span></div><div><strong>{{crm_tasks|length}}</strong><span>In view</span></div><div><strong>{{team_open_tasks}}</strong><span>Team open</span></div></div><div class="compact-task-grid">{% for task in crm_tasks[:6] %}<a class="compact-task" href="{% if task.business %}/businesses/{{task.business.id}}#crm{% else %}/tasks{% endif %}"><span class="badge {{task.priority}}">{{task.priority|title}}</span><b>{{task.title}}</b><small>{{task.business.legal_name if task.business else 'Internal'}}{% if task.due_date %} · {{task.due_date.strftime('%b %d')}}{% endif %}</small></a>{% else %}<div class="empty-state compact"><span>✓</span><b>No assigned tasks</b></div>{% endfor %}</div></section></div>
+{% endblock %}

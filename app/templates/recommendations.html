@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block page_context %}Recommendations{% endblock %}{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Recommendation engine</p><h1>Recommended actions</h1><p class="muted">Transparent, rule-based actions generated from reporting, exposure movement, renewals, and review work.</p></div></div>
+<form class="filter-bar" method="get"><label>Status<select name="status"><option value="active" {% if filters.status=='active' %}selected{% endif %}>Active</option><option value="completed" {% if filters.status=='completed' %}selected{% endif %}>Completed</option><option value="dismissed" {% if filters.status=='dismissed' %}selected{% endif %}>Dismissed</option><option value="" {% if not filters.status %}selected{% endif %}>All</option></select></label><label>Priority<select name="priority"><option value="">All</option>{% for p in ['high','medium','low'] %}<option value="{{p}}" {% if filters.priority==p %}selected{% endif %}>{{p|title}}</option>{% endfor %}</select></label><button>Apply filters</button></form>
+<div class="recommendation-stack">
+{% for rec in recommendations %}<article class="recommendation-card {{ rec.priority }}">
+  <div class="recommendation-header"><div><span class="badge {{ rec.priority }}">{{ rec.priority|title }}</span><span class="soft-badge">{{ rec.confidence|title }} confidence</span><h2><a href="/businesses/{{ rec.business.id }}">{{ rec.business.legal_name }}</a> · {{ rec.title }}</h2></div><span class="status-chip {{ rec.status }}">{{ rec.status|replace('_',' ')|title }}</span></div>
+  <p class="recommendation-reason"><b>Reason:</b> {{ rec.reason }}</p>
+  <div class="recommendation-actions-list"><b>Suggested actions</b><ul>{% for action in action_map[rec.id] %}<li>{{ action }}</li>{% endfor %}</ul></div>
+  <div class="recommendation-controls">
+    {% if rec.status in ['open','packet_added'] %}<form method="post" action="/recommendations/{{rec.id}}/task"><button>Create task</button></form>{% endif %}
+    {% if rec.status in ['open','task_created'] %}<form method="post" action="/recommendations/{{rec.id}}/packet"><button class="secondary">Add to review packet</button></form>{% endif %}
+    {% if rec.linked_task %}<a class="button secondary" href="/tasks">View task</a>{% endif %}{% if rec.linked_packet %}<a class="button secondary" href="/review-packets/{{rec.linked_packet.id}}">View packet</a>{% endif %}
+    {% if rec.status in ['open','task_created','packet_added'] %}<form method="post" action="/recommendations/{{rec.id}}/resolve"><input type="hidden" name="action" value="completed"><button class="ghost-button">Mark complete</button></form><form method="post" action="/recommendations/{{rec.id}}/resolve"><input type="hidden" name="action" value="dismissed"><button class="ghost-button">Dismiss</button></form>{% else %}<form method="post" action="/recommendations/{{rec.id}}/resolve"><input type="hidden" name="action" value="reopen"><button class="secondary">Reopen</button></form>{% endif %}
+  </div>
+</article>{% else %}<div class="empty-state"><span>✓</span><b>No recommendations match these filters</b><small>CommercialCore will create actions when an account condition meets a visible rule.</small></div>{% endfor %}
+</div>
+{% endblock %}

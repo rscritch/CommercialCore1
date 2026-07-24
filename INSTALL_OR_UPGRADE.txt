@@ -1,0 +1,16 @@
+CommercialCore Master v1.5
+
+Fresh installation
+1. Extract the ZIP to a new folder.
+2. Run run.bat.
+3. Open http://127.0.0.1:8000.
+4. Default login: admin / admin123.
+
+Upgrade from an earlier release
+1. Stop CommercialCore.
+2. Back up the existing data folder.
+3. Extract v1.5 to a new folder.
+4. Copy the prior data folder into the new v1.5 folder.
+5. Run run.bat.
+
+Executive reports are available from the left navigation after login.

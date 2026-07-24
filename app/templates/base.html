@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}CommercialCore{% endblock %}</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="{% if user %}app-body{% else %}auth-body{% endif %}">
+{% if user %}
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">CC</div>
+      <div><strong>CommercialCore</strong><span>Commercial intelligence</span></div>
+    </div>
+    <nav class="side-nav" aria-label="Primary navigation">
+      <a class="{% if request.url.path == '/dashboard' %}active{% endif %}" href="/dashboard"><span class="nav-icon">⌂</span><span>Dashboard</span></a>
+      <a class="{% if request.url.path.startswith('/businesses') %}active{% endif %}" href="/businesses"><span class="nav-icon">▦</span><span>Businesses</span></a>
+      <a class="{% if request.url.path.startswith('/reviews') %}active{% endif %}" href="/reviews"><span class="nav-icon">✓</span><span>Review queue</span></a>
+      <a class="{% if request.url.path.startswith('/review-packets') %}active{% endif %}" href="/review-packets"><span class="nav-icon">▤</span><span>Review packets</span></a>
+      <a class="{% if request.url.path.startswith('/recommendations') %}active{% endif %}" href="/recommendations"><span class="nav-icon">◆</span><span>Recommendations</span></a>
+      <a class="{% if request.url.path.startswith('/tasks') %}active{% endif %}" href="/tasks"><span class="nav-icon">◫</span><span>My tasks</span></a>
+      <a class="{% if request.url.path.startswith('/activities') %}active{% endif %}" href="/activities"><span class="nav-icon">◉</span><span>Activities</span></a>
+      <a class="{% if request.url.path.startswith('/executive-reports') %}active{% endif %}" href="/executive-reports"><span class="nav-icon">▥</span><span>Executive reports</span></a>
+      {% if user.role in ['administrator','producer','account_manager'] %}<a class="{% if request.url.path.startswith('/audit') %}active{% endif %}" href="/audit"><span class="nav-icon">↺</span><span>Audit history</span></a>{% endif %}
+      {% if user.role == 'administrator' %}<a class="{% if request.url.path.startswith('/admin') %}active{% endif %}" href="/admin/users"><span class="nav-icon">⚙</span><span>Administration</span></a>{% endif %}
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-panel"><span class="user-avatar">{{ user.username[:1]|upper }}</span><div><strong>{{ user.username }}</strong><span>{{ user.role|replace('_',' ')|title }}</span></div></div>
+      <form method="post" action="/logout"><button class="ghost-button full-width">Sign out</button></form>
+    </div>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="menu-button" type="button" onclick="document.body.classList.toggle('nav-open')" aria-label="Toggle navigation">☰</button>
+      <div class="topbar-context"><span class="context-label">Workspace</span><strong>{% block page_context %}CommercialCore{% endblock %}</strong></div>
+      <div class="topbar-meta">Internal agency workflow</div>
+    </header>
+    <main class="content-wrap">
+{% else %}
+<main>
+{% endif %}
+{% block content %}{% endblock %}
+{% if user %}
+    </main>
+  </div>
+</div>
+{% else %}
+</main>
+{% endif %}
+</body></html>
