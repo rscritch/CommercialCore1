@@ -1,6 +1,0 @@
-{% extends "base.html" %}{% block content %}
-<div class="actions" style="justify-content:space-between"><h1>Businesses</h1><a class="button" href="/businesses/new">Add business</a></div>
-<form method="get" class="card" style="margin-bottom:18px"><div class="grid"><div class="span-8"><input name="q" value="{{ q }}" placeholder="Search businesses"></div><div class="span-4"><button>Search</button></div></div></form>
-<table><tr><th>Business</th><th>Industry</th><th>Renewal month</th><th>Status</th></tr>
-{% for b in businesses %}<tr><td><a href="/businesses/{{ b.id }}">{{ b.legal_name }}</a>{% if b.dba_name %}<br><span class="muted">{{ b.dba_name }}</span>{% endif %}</td><td>{{ b.industry or "" }}</td><td>{{ b.renewal_month or "" }}</td><td>{{ b.status }}</td></tr>{% else %}<tr><td colspan="4">No businesses found.</td></tr>{% endfor %}
-</table>{% endblock %}
